@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://brice96940.github.io/AEC-Cameroun/sitemap.xml

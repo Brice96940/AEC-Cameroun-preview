@@ -260,7 +260,8 @@
 </div>
 
 <div class="diag-step" data-step="result" hidden="" id="diagStepResult">
-<p class="diag-stepnum">Ton résultat</p>
+<p class="diag-stepnum" id="diagResultHeading" tabindex="-1">Ton résultat</p>
+<p class="diag-result-parcours" id="diagResultParcours"></p>
 <div class="diag-result-grid">
 <div class="diag-result-item">
 <span class="diag-result-label">🎯 Objectif</span>
@@ -275,12 +276,20 @@
 <p id="diagResultAction"></p>
 </div>
 <div class="diag-result-item">
-<span class="diag-result-label">🤝 Mode d’aide</span>
-<p id="diagResultMode"></p>
+<span class="diag-result-label">📅 Échéance AEC proposée</span>
+<p id="diagResultEcheance"></p>
+</div>
+<div class="diag-result-item">
+<span class="diag-result-label">🧾 Élément / preuve à préparer</span>
+<p id="diagResultPreuve"></p>
 </div>
 <div class="diag-result-item diag-result-source">
 <span class="diag-result-label">📌 Source à vérifier</span>
-<p>À préciser selon ton objectif.</p>
+<p id="diagResultSource"></p>
+</div>
+<div class="diag-result-item">
+<span class="diag-result-label">🤝 Mode d’aide</span>
+<p id="diagResultMode"></p>
 </div>
 </div>
 <div class="diag-nav">

@@ -7,9 +7,9 @@
   const state = { q1: null, q2: null, q3: null };
 
   const OBJECTIF_LABELS = {
-    etudes: "Choisir ou préparer sereinement tes études ou un concours dans les prochains mois.",
-    stage: "Trouver un stage ou une première expérience dans les prochains mois.",
-    emploi: "Trouver ton premier emploi dans les prochains mois.",
+    etudes: "Choisir ou préparer sereinement tes études ou un concours dans les 30 à 90 prochains jours.",
+    stage: "Trouver un stage ou une première expérience dans les 30 à 90 prochains jours.",
+    emploi: "Trouver ton premier emploi dans les 30 à 90 prochains jours.",
     inconnu: "Clarifier d’abord une cible précise avant d’avancer."
   };
 
@@ -22,17 +22,50 @@
   };
 
   const MODE_LABELS = {
-    seul: "Tu avances seul.",
-    systeme: "Tu veux un système déjà préparé.",
-    accompagne: "Tu veux un accompagnement."
+    seul: "Autonome — tu peux commencer avec l’action proposée et les ressources gratuites.",
+    systeme: "Système préparé — un parcours structuré pourra t’aider à exécuter les étapes.",
+    accompagne: "Accompagnement — un suivi humain pourra être proposé après le diagnostic."
+  };
+
+  /**
+   * Nom de parcours affiché (contrat de sortie).
+   */
+  const PARCOURS_LABELS = {
+    etudes: "Études / concours",
+    stage: "Stage / première expérience",
+    emploi: "Premier emploi",
+    inconnu: "Clarification préalable"
+  };
+
+  /**
+   * Catégorie de source à vérifier : une par parcours (pas par blocage).
+   * Aucune URL n'est inventée à ce stade (traité dans le slice Sources officielles).
+   */
+  const SOURCE_LABELS = {
+    etudes: "Source officielle de l’établissement, du concours ou de l’organisme concerné.",
+    stage: "Source officielle de l’entreprise, de l’organisme ou de l’offre concernée.",
+    emploi: "Source officielle de l’employeur ou de l’offre concernée.",
+    inconnu: "Pas de source externe requise à ce stade."
+  };
+
+  /**
+   * Décalage (en jours) de l'échéance AEC proposée, calculée côté client
+   * à partir du jour du diagnostic. Ce n'est jamais une échéance officielle.
+   */
+  const ECHEANCE_DAYS = {
+    etudes: 7,
+    stage: 7,
+    emploi: 7,
+    inconnu: 3
   };
 
   /**
    * Table de règles produit : (q1, q2) -> prochaine action unique.
-   * q1 "inconnu" court-circuite q2 (une seule réponse possible).
+   * q1 "inconnu" court-circuite q2 (une seule réponse possible, pas de
+   * recommandation métier artificielle construite à partir de q2).
    */
   const RULES = {
-    inconnu: "Commencer par clarifier une cible parmi Études/Concours, Stage/Expérience ou Premier emploi.",
+    inconnu: "Note les 2 résultats que tu aimerais le plus obtenir dans les 90 prochains jours, puis choisis celui qui aurait le plus d’impact concret.",
     etudes: {
       choix: "Comparer 2 à 3 options avec conditions d’accès, calendrier, coût et source officielle.",
       info: "Vérifier la prochaine information déterminante auprès de la source officielle concernée.",
@@ -57,40 +90,84 @@
   };
 
   /**
-   * Retourne la prochaine action pour une combinaison (q1, q2).
-   * Ne retourne jamais une chaîne vide/undefined pour une combinaison valide.
+   * Élément/preuve à préparer : (q1, q2) -> texte unique.
+   * q1 "inconnu" court-circuite q2 (même logique que RULES).
    */
-  function getAction(q1, q2) {
-    if (q1 === "inconnu") return RULES.inconnu;
-    const branch = RULES[q1];
+  const PREUVE = {
+    inconnu: "Deux options concrètes à comparer.",
+    etudes: {
+      choix: "Une liste courte de 2 à 3 options à comparer",
+      info: "Les conditions, dates, coûts et pièces demandées",
+      profil: "Les diplômes, relevés ou pièces utiles au dossier",
+      opportunites: "Une liste courte d’établissements, concours ou programmes pertinents",
+      action: "Une première démarche concrète à réaliser"
+    },
+    stage: {
+      choix: "Une cible d’expérience ou de mission à tester",
+      info: "Les conditions et attentes de la structure ciblée",
+      profil: "Un CV ou une preuve concrète de compétence/projet",
+      opportunites: "Une liste courte de structures ou offres adaptées",
+      action: "Une première candidature ou prise de contact"
+    },
+    emploi: {
+      choix: "Une cible métier ou fonction prioritaire",
+      info: "Les exigences réelles des offres ciblées",
+      profil: "Un CV adapté et les preuves pertinentes de compétences",
+      opportunites: "Une liste courte d’offres ou employeurs pertinents",
+      action: "Une première candidature ciblée et traçable"
+    }
+  };
+
+  /**
+   * Lit une table structurée comme RULES/PREUVE : q1 "inconnu" court-circuite q2.
+   */
+  function readTable(table, q1, q2) {
+    if (q1 === "inconnu") return table.inconnu;
+    const branch = table[q1];
     return (branch && branch[q2]) || null;
   }
 
+  function getAction(q1, q2) {
+    return readTable(RULES, q1, q2);
+  }
+
+  function getPreuve(q1, q2) {
+    return readTable(PREUVE, q1, q2);
+  }
+
   /**
-   * Auto-vérification de la table de règles, indépendante du DOM :
-   * couvre les 20 couples Q1 x Q2 réels (y compris les 5 lignes "inconnu",
-   * qui renvoient volontairement le même conseil générique par construction).
-   * S'exécute à chaque chargement du script, même sans vue diagnostic présente.
+   * Échéance AEC proposée : jour du diagnostic + N jours selon le parcours,
+   * calculée côté client, jamais envoyée, jamais stockée. Format FR lisible.
    */
-  (function selfCheckRules() {
-    const q1Values = ["etudes", "stage", "emploi", "inconnu"];
-    const q2Values = ["choix", "info", "profil", "opportunites", "action"];
-    let missing = 0;
-    q1Values.forEach((q1) => {
-      q2Values.forEach((q2) => {
-        if (!getAction(q1, q2)) {
-          missing++;
-          console.error("Diagnostic : action manquante pour", q1, q2);
-        }
-      });
-    });
-    const total = q1Values.length * q2Values.length;
-    if (missing === 0) {
-      console.info("Diagnostic : table de règles complète (" + total + "/" + total + " couples Q1 x Q2 vérifiés).");
-    } else {
-      console.error("Diagnostic : " + missing + "/" + total + " couples manquants.");
-    }
-  })();
+  function getEcheance(q1) {
+    const days = ECHEANCE_DAYS[q1];
+    if (typeof days !== "number") return null;
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" }).format(date);
+  }
+
+  /**
+   * Export de la logique métier pure pour les tests Node (tests/diagnostic.test.js).
+   * N'a aucun effet dans le navigateur : `module` n'y existe pas, ce bloc est ignoré.
+   * Ne contient jamais le reste (DOM, état, écouteurs) : la logique métier pure
+   * est la seule partie testée hors navigateur.
+   */
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+      OBJECTIF_LABELS,
+      BLOCAGE_LABELS,
+      MODE_LABELS,
+      PARCOURS_LABELS,
+      SOURCE_LABELS,
+      ECHEANCE_DAYS,
+      RULES,
+      PREUVE,
+      getAction,
+      getPreuve,
+      getEcheance
+    };
+  }
 
   const stepsEl = {
     1: document.getElementById("diagStep1"),
@@ -135,12 +212,21 @@
 
   function renderResult() {
     const action = getAction(state.q1, state.q2) || "Clarifier ta situation puis revenir faire le diagnostic.";
+    const preuve = getPreuve(state.q1, state.q2) || "À préciser selon ta situation.";
+
+    document.getElementById("diagResultParcours").textContent = PARCOURS_LABELS[state.q1] || "";
     document.getElementById("diagResultObjectif").textContent = OBJECTIF_LABELS[state.q1] || "";
     document.getElementById("diagResultBlocage").textContent = state.q1 === "inconnu"
       ? "Ta priorité n’est pas encore claire : c’est normal, c’est le point de départ."
       : (BLOCAGE_LABELS[state.q2] || "");
     document.getElementById("diagResultAction").textContent = action;
+    document.getElementById("diagResultEcheance").textContent = getEcheance(state.q1) || "";
+    document.getElementById("diagResultPreuve").textContent = preuve;
+    document.getElementById("diagResultSource").textContent = SOURCE_LABELS[state.q1] || "";
     document.getElementById("diagResultMode").textContent = MODE_LABELS[state.q3] || "";
+
+    const heading = document.getElementById("diagResultHeading");
+    if (heading) heading.focus();
   }
 
   function restart() {

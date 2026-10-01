@@ -1214,6 +1214,19 @@
   border-radius: 4px;
 }
 
+.diag-result-precision {
+  margin: -6px 0 16px;
+  color: var(--mint);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#diagStep4 .diag-stepnum:focus-visible {
+  outline: 2px solid rgba(30, 207, 160, 0.55);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
 .diag-options {
   display: flex;
   flex-direction: column;

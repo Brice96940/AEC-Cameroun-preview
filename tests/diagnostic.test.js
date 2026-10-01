@@ -118,6 +118,120 @@ Q1.forEach((q1) => {
 });
 console.log("Échéances : " + passF + "/4 PASS");
 
+// =====================================================================
+// V3-05 : diagnostic approfondi conditionnel (Niveau 2)
+// =====================================================================
+
+const Q1_BUSINESS = ["etudes", "stage", "emploi"];
+const Q2_LEVEL2 = ["choix", "info", "profil", "opportunites"]; // jamais "action"
+
+// --- G. Déclenchement : 12/12 avec Niveau 2, 8/8 sans ---
+let passG = 0, totalWith = 0;
+Q1_BUSINESS.forEach((q1) => Q2_LEVEL2.forEach((q2) => {
+  totalWith++;
+  const ok = !!M.getLevel2Spec(q1, q2);
+  check("level2 attendu " + q1 + "/" + q2, ok);
+  if (ok) passG++;
+}));
+console.log("Niveau 2 attendu : " + passG + "/" + totalWith + " PASS");
+
+let passH = 0, totalWithout = 0;
+Q1_BUSINESS.forEach((q1) => {
+  totalWithout++;
+  const ok = M.getLevel2Spec(q1, "action") === null;
+  check("pas de level2 " + q1 + "/action", ok);
+  if (ok) passH++;
+});
+Q2.forEach((q2) => {
+  totalWithout++;
+  const ok = M.getLevel2Spec("inconnu", q2) === null;
+  check("pas de level2 inconnu/" + q2, ok);
+  if (ok) passH++;
+});
+console.log("Pas de Niveau 2 attendu : " + passH + "/" + totalWithout + " PASS");
+
+// --- H. Chaque spec Niveau 2 est bien formée ---
+let passSpec = 0, totalSpec = 0;
+Q1_BUSINESS.forEach((q1) => Q2_LEVEL2.forEach((q2) => {
+  totalSpec++;
+  const spec = M.getLevel2Spec(q1, q2);
+  const values = spec ? spec.options.map((o) => o.value) : [];
+  const uniqueValues = new Set(values);
+  const ok = !!(spec
+    && spec.id
+    && spec.question
+    && Array.isArray(spec.options)
+    && spec.options.length >= 2
+    && uniqueValues.size === values.length
+    && spec.options.every((o) => o.value && o.label));
+  check("spec bien formée " + q1 + "/" + q2, ok);
+  if (ok) passSpec++;
+}));
+console.log("Specs bien formées : " + passSpec + "/" + totalSpec + " PASS");
+
+// --- I. Adaptation : chaque option de chaque spec produit action/preuve non vides ---
+let passAdapt = 0, totalAdapt = 0;
+const baseResultFor = (q1, q2) => ({
+  parcours: M.PARCOURS_LABELS[q1],
+  objectif: M.OBJECTIF_LABELS[q1],
+  blocage: M.BLOCAGE_LABELS[q2],
+  action: M.getAction(q1, q2),
+  echeance: M.getEcheance(q1),
+  preuve: M.getPreuve(q1, q2),
+  source: M.SOURCE_LABELS[q1],
+  mode: M.MODE_LABELS.seul
+});
+
+Q1_BUSINESS.forEach((q1) => Q2_LEVEL2.forEach((q2) => {
+  const spec = M.getLevel2Spec(q1, q2);
+  if (!spec) return;
+  spec.options.forEach((opt) => {
+    totalAdapt++;
+    const base = baseResultFor(q1, q2);
+    const adapted = M.applyLevel2(base, q1, q2, opt.value);
+    const ok = !!(adapted.action && adapted.preuve);
+    check("adapt " + q1 + "/" + q2 + "/" + opt.value, ok);
+    if (ok) passAdapt++;
+  });
+}));
+console.log("Adaptations Niveau 2 : " + passAdapt + "/" + totalAdapt + " PASS");
+
+// --- J. Invariants : Niveau 2 ne change jamais parcours/objectif/blocage/mode/source ---
+let passInvariant = 0, totalInvariant = 0;
+Q1_BUSINESS.forEach((q1) => Q2_LEVEL2.forEach((q2) => {
+  const spec = M.getLevel2Spec(q1, q2);
+  if (!spec) return;
+  spec.options.forEach((opt) => {
+    totalInvariant++;
+    const base = baseResultFor(q1, q2);
+    const adapted = M.applyLevel2(base, q1, q2, opt.value);
+    const ok = adapted.parcours === base.parcours
+      && adapted.objectif === base.objectif
+      && adapted.blocage === base.blocage
+      && adapted.mode === base.mode
+      && adapted.source === base.source;
+    check("invariant " + q1 + "/" + q2 + "/" + opt.value, ok);
+    if (ok) passInvariant++;
+  });
+}));
+console.log("Invariants Niveau 2 : " + passInvariant + "/" + totalInvariant + " PASS");
+
+// --- K. Changement de Q1/Q2 efface une réponse Niveau 2 existante ---
+let passClear = 0;
+const clearChecks = [
+  ["q1 change -> clear", M.level2ShouldClear("q1", "etudes", "stage") === true],
+  ["q1 identique -> pas de clear", M.level2ShouldClear("q1", "etudes", "etudes") === false],
+  ["q2 change -> clear", M.level2ShouldClear("q2", "choix", "info") === true],
+  ["q2 identique -> pas de clear", M.level2ShouldClear("q2", "choix", "choix") === false],
+  ["q3 change -> jamais de clear", M.level2ShouldClear("q3", "seul", "systeme") === false],
+  ["level2 lui-même -> jamais de clear", M.level2ShouldClear("level2", "a", "b") === false]
+];
+clearChecks.forEach(([label, ok]) => {
+  check("clear " + label, ok);
+  if (ok) passClear++;
+});
+console.log("Effacement Niveau 2 : " + passClear + "/" + clearChecks.length + " PASS");
+
 console.log("");
 if (failures === 0) {
   console.log("TOUS LES TESTS PASSENT.");

@@ -204,20 +204,16 @@
 <div class="section-head">
 <div>
 <h2>Faire mon diagnostic</h2>
-<p class="hint">3 questions rapides. Aucune donnée personnelle n’est demandée.</p>
+<p class="hint">3 questions rapides, avec une précision supplémentaire uniquement si elle est utile.</p>
 </div>
 </div>
 <div class="card pad diag-card" id="diagCard">
-<div class="diag-progress" id="diagProgress" aria-hidden="true">
-<span class="diag-dot" data-dot="1"></span>
-<span class="diag-dot" data-dot="2"></span>
-<span class="diag-dot" data-dot="3"></span>
-</div>
+<div class="diag-progress" id="diagProgress" aria-hidden="true"></div>
 
 <div class="diag-step" id="diagStep1" data-step="1">
 <p class="diag-stepnum">Question 1 / 3</p>
 <h3>Quel résultat veux-tu obtenir dans les 30 à 90 prochains jours ?</h3>
-<div class="diag-options" role="group" aria-label="Question 1 sur 3">
+<div class="diag-options" role="group" aria-label="Question 1">
 <button class="diag-opt" data-q="q1" data-v="etudes" type="button">Choisir / préparer mes études ou un concours</button>
 <button class="diag-opt" data-q="q1" data-v="stage" type="button">Trouver un stage ou une première expérience</button>
 <button class="diag-opt" data-q="q1" data-v="emploi" type="button">Trouver mon premier emploi</button>
@@ -232,7 +228,7 @@
 <div class="diag-step" data-step="2" hidden="" id="diagStep2">
 <p class="diag-stepnum">Question 2 / 3</p>
 <h3>Quel est ton blocage principal aujourd’hui ?</h3>
-<div class="diag-options" role="group" aria-label="Question 2 sur 3">
+<div class="diag-options" role="group" aria-label="Question 2">
 <button class="diag-opt" data-q="q2" data-v="choix" type="button">Je ne sais pas quoi choisir</button>
 <button class="diag-opt" data-q="q2" data-v="info" type="button">Je ne sais pas quoi vérifier / où trouver une information fiable</button>
 <button class="diag-opt" data-q="q2" data-v="profil" type="button">Je ne sais pas comment présenter mon profil, mes preuves ou mon CV</button>
@@ -248,7 +244,7 @@
 <div class="diag-step" data-step="3" hidden="" id="diagStep3">
 <p class="diag-stepnum">Question 3 / 3</p>
 <h3>Comment veux-tu avancer ?</h3>
-<div class="diag-options" role="group" aria-label="Question 3 sur 3">
+<div class="diag-options" role="group" aria-label="Question 3">
 <button class="diag-opt" data-q="q3" data-v="seul" type="button">Seul</button>
 <button class="diag-opt" data-q="q3" data-v="systeme" type="button">Avec un système préparé</button>
 <button class="diag-opt" data-q="q3" data-v="accompagne" type="button">Avec un accompagnement</button>
@@ -259,9 +255,21 @@
 </div>
 </div>
 
+<div class="diag-step" data-step="4" hidden="" id="diagStep4">
+<p class="diag-stepnum" tabindex="-1">Une précision utile</p>
+<p class="hint" style="margin-bottom:14px;">Cette question est posée uniquement parce qu’elle peut modifier ta prochaine action.</p>
+<h3 id="diagLevel2Question"></h3>
+<div class="diag-options" id="diagLevel2Options" role="group" aria-label="Précision complémentaire"></div>
+<div class="diag-nav">
+<button class="btn diag-back" data-back="3" type="button">← Retour</button>
+<button class="btn primary diag-next" data-next="result" disabled="" type="button">Voir mon résultat →</button>
+</div>
+</div>
+
 <div class="diag-step" data-step="result" hidden="" id="diagStepResult">
 <p class="diag-stepnum" id="diagResultHeading" tabindex="-1">Ton résultat</p>
 <p class="diag-result-parcours" id="diagResultParcours"></p>
+<p class="diag-result-precision" id="diagResultPrecision" hidden="">Précision prise en compte</p>
 <div class="diag-result-grid">
 <div class="diag-result-item">
 <span class="diag-result-label">🎯 Objectif</span>
